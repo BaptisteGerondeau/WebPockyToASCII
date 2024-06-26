@@ -1,0 +1,9 @@
+services:
+  postgres:
+    image: 'postgres:latest'
+    environment:
+      - 'POSTGRES_DB=pockytoascii'
+      - 'POSTGRES_PASSWORD=chat'
+      - 'POSTGRES_USER=pocky'
+    ports:
+      - '5432'
