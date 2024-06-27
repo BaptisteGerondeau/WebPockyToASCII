@@ -3,6 +3,7 @@ package com.pocky.webpockytoascii.model.Image;
 import java.util.Arrays;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,6 +34,7 @@ public class Image {
 
     @Lob
     @Column(name="image_data", nullable=true, length=409600)
+    @JsonIgnore
     private byte[] imageData;
 
     public Image(String name, String type, byte[] imageData) {
@@ -91,6 +93,6 @@ public class Image {
 
     @Override
     public String toString() {
-        return "Image{" + "id=" + this.id + ", name='" + this.name + '\'' + ", type='" + this.type + '\'' + '}';
+        return "{" + "id=" + this.id + ", name='" + this.name + '\'' + ", type='" + this.type + '\'' + '}';
     }
 }

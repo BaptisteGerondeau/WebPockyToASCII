@@ -8,6 +8,8 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
@@ -17,25 +19,25 @@ public class ImageService {
     @Autowired
     private com.pocky.webpockytoascii.model.Image.ImageRepository ImageRepository;
 
-    public String uploadImage(MultipartFile file) throws IOException {
-
-        ImageRepository.save(Image.builder()
-                .name(file.getOriginalFilename())
-                .type(file.getContentType())
-                .imageData(ImageUtil.compressImage(file.getBytes())).build());
-
-        return "Image uploaded successfully: " + file.getOriginalFilename();
-
+    public Image uploadImage(MultipartFile file) throws ImageHandlingException {
+        try {
+            return ImageRepository.save(Image.builder()
+                    .name(file.getOriginalFilename())
+                    .type(file.getContentType())
+                    .imageData(ImageUtil.compressImage(file.getBytes())).build());
+        } catch (IOException e) {
+            throw new ImageHandlingException(e.getMessage());
+        }
     }
 
-    public String updateImage(long id, MultipartFile file) throws IOException {
+    public Image updateImage(long id, MultipartFile file) throws ImageHandlingException {
         Optional<Image> dbImage = ImageRepository.findById(id);
         if(dbImage.isPresent()){
             try {
                 dbImage.get().setImageData(file.getBytes());
-                return "Image updated successfully: " + file.getOriginalFilename();
+                return dbImage.get();
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new ImageHandlingException(e.getMessage());
             }
         }
         else {
@@ -43,17 +45,18 @@ public class ImageService {
         }
     }
 
-    public String deleteImage(long id) {
+    public String deleteImage(long id) throws NoSuchElementException {
         Optional<Image> dbImage = ImageRepository.findById(id);
         if(dbImage.isPresent()) {
             ImageRepository.deleteById(id);
             return "Image deleted successfully";
         }
-
-        return "Image not found";
+        else {
+            throw new NoSuchElementException("Image not found");
+        }
     }
 
-    public ArrayList<Image> getIdByName(String name) {
+    public ArrayList<Image> getIdByName(String name) throws NoSuchElementException {
         Optional<ArrayList<Image>> dbImage = ImageRepository.findByName(name);
         
         ArrayList<Image> result = new ArrayList<Image>();
@@ -69,21 +72,22 @@ public class ImageService {
             return result;
         }
         else {
-            return null;
+            throw new NoSuchElementException("Image not found");
         }
     }
 
-    public byte[] getImageData(long id) {
+    public byte[] getImageData(long id) throws NoSuchElementException {
         Optional<Image> dbImage = ImageRepository.findById(id);
         if (dbImage.isPresent() && dbImage.get().getImageData() != null) {
             return ImageUtil.decompressImage(dbImage.get().getImageData());
         }
         else {
-            return null;
+            throw new NoSuchElementException("Image not found");
         }
     }
 
-    public Iterable<Image> findAllImages() {
+    public List<Image> findAllImages() {
+        //Needs paging
         return ImageRepository.findAll();
     }
 }
