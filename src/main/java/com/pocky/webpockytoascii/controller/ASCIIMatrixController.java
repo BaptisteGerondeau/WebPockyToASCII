@@ -2,62 +2,52 @@ package com.pocky.webpockytoascii.controller;
 
 import com.pocky.webpockytoascii.model.ASCIIMatrix.ASCIIMatrix;
 import com.pocky.webpockytoascii.service.ASCIIMatrixService;
+import com.pocky.webpockytoascii.service.ImageHandlingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/asciiart")
-public class ASCIIMatrixController {
+public class ASCIIMatrixController extends BaseController {
+
+    private static final Logger log = LoggerFactory.getLogger(ASCIIMatrixController.class);
 
     @Autowired
     private ASCIIMatrixService AsciiMatrixService = new ASCIIMatrixService();
 
     @PostMapping
-    public ResponseEntity<?> requestASCIIMatrix(@RequestParam("imageid") long imageid, @RequestParam("type") String type) throws IOException {
-        String response = String.valueOf(AsciiMatrixService.convertImageToASCIIMatrix(imageid, type));
-
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(response);
+    public ASCIIMatrix requestASCIIMatrix(@RequestParam(value="imageid") long imageid,
+                                          @RequestParam(value="type", defaultValue = "raw") String type,
+                                          @RequestParam(value="key", defaultValue = "`^\",:;Il!i~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$") String key,
+                                          @RequestParam(value="dwidth", defaultValue = "94") int dwidth,
+                                          @RequestParam(value="invert", defaultValue = "false") boolean invert)
+            throws IllegalArgumentException, ImageHandlingException {
+        return AsciiMatrixService.convertImageToASCIIMatrix(imageid, type, key, dwidth, invert);
     }
 
     @GetMapping
-    public ResponseEntity<?> getAllMatrices() {
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(AsciiMatrixService.findAllImages());
+    public Iterable<ASCIIMatrix> getAllMatrices() {
+        return AsciiMatrixService.findAllImages();
     }
 
-//    @PostMapping("/{id}")
-//    public ResponseEntity<?> updateImage(@PathVariable long id, @RequestParam("type") String type) {
-//        return ResponseEntity.status(HttpStatus.OK)
-//                .body(AsciiMatrixService.);
-//    }
-
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteAscii(@PathVariable long id) {
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(AsciiMatrixService.deleteASCIIMatrix(id));
+    public String deleteAscii(@PathVariable long id) throws NoSuchElementException {
+        return AsciiMatrixService.deleteASCIIMatrix(id);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getAscii(@PathVariable("id") long id){
-        byte[] ascii = AsciiMatrixService.getMatrixData(id);
-        String art = new String(ascii);
-
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(art);
+    public byte[] getAscii(@PathVariable("id") long id) throws NoSuchElementException {
+        return AsciiMatrixService.getMatrixData(id);
     }
 
     @GetMapping("/ids/{imageid}")
-    public ResponseEntity<?> getIdByImageId(@PathVariable("imageid") long id){
-        ArrayList<ASCIIMatrix> matrices = AsciiMatrixService.getIdByImageId(id);
-
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(matrices);
+    public ArrayList<ASCIIMatrix> getIdByImageId(@PathVariable("imageid") long id) throws NoSuchElementException {
+        return AsciiMatrixService.getIdByImageId(id);
     }
 }

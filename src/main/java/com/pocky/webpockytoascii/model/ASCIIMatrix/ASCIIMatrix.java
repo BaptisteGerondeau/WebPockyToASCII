@@ -1,5 +1,6 @@
 package com.pocky.webpockytoascii.model.ASCIIMatrix;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
@@ -31,6 +32,7 @@ public class ASCIIMatrix {
 
     @Lob
     @Column(name="matrix_data", nullable=true, length=409600)
+    @JsonIgnore
     private byte[] matrixData;
 
     @Override

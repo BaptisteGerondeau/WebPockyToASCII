@@ -1,7 +1,6 @@
 package com.pocky.webpockytoascii.service;
 
 import com.pocky.webpockytoascii.model.ASCIIMatrix.ASCIIMatrix;
-import com.pocky.webpockytoascii.model.ASCIIMatrix.ASCIIMatrixRespository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +11,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import com.pocky.pockytoascii.*;
@@ -28,7 +28,9 @@ public class ASCIIMatrixService {
     @Autowired
     private com.pocky.webpockytoascii.service.ImageService ImageService;
 
-    public ASCIIMatrix convertImageToASCIIMatrix(long imageId, String type) throws IOException {
+    public ASCIIMatrix convertImageToASCIIMatrix(long imageId, String type, String key, int dwidth, boolean invert)
+            throws ImageHandlingException, ImageHandlingException {
+
         Renderer converter;
         switch (type.toLowerCase(Locale.ROOT)) {
             case "html":
@@ -45,36 +47,36 @@ public class ASCIIMatrixService {
         }
 
         byte[] data = ImageService.getImageData(imageId);
-        String ASCIIBrightnessScale = "`^\",:;Il!i~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
         BufferedImage image = null;
         if (data != null) {
             try {
                 image = ImageIO.read(new ByteArrayInputStream(data));
             } catch (IOException exception) {
-                throw new IOException(exception);
+                throw new ImageHandlingException(exception.getMessage());
             }
         } else {
             throw new IllegalArgumentException("Image not found: " + imageId);
         }
 
-        PixelMatrix pxmatrix = new PixelMatrix(image, 94, -1);
+        PixelMatrix pxmatrix = new PixelMatrix(image, dwidth, -1);
         return ASCIIMatrixRepository.save(ASCIIMatrix.builder()
                 .imageId(imageId)
                 .type(type)
-                .matrixData(converter.render(pxmatrix, ASCIIBrightnessScale, false, PixelMatrix.BRIGHTNESS_MODE.AVERAGE).getBytes()).build());
+                .matrixData(converter.render(pxmatrix, key, invert, PixelMatrix.BRIGHTNESS_MODE.AVERAGE).getBytes())
+                .build());
     }
 
-    public String deleteASCIIMatrix(long id) {
+    public String deleteASCIIMatrix(long id) throws NoSuchElementException {
         Optional<ASCIIMatrix> dbMatrix = ASCIIMatrixRepository.findById(id);
         if(dbMatrix.isPresent()) {
             ASCIIMatrixRepository.deleteById(id);
             return "ASCII Matrix deleted successfully";
         }
 
-        return "ASCII Matrix not found";
+        throw new NoSuchElementException("No ASCII Matrix found with id: " + id);
     }
 
-    public ArrayList<ASCIIMatrix> getIdByImageId(long imageId) {
+    public ArrayList<ASCIIMatrix> getIdByImageId(long imageId) throws NoSuchElementException {
         Optional<ArrayList<ASCIIMatrix>> dbMatrix = ASCIIMatrixRepository.findByImageId(imageId);
 
         ArrayList<ASCIIMatrix> result = new ArrayList<ASCIIMatrix>();
@@ -90,17 +92,17 @@ public class ASCIIMatrixService {
             return result;
         }
         else {
-            return null;
+            throw new NoSuchElementException("No ASCII Matrix found with imageid: " + imageId);
         }
     }
 
-    public byte[] getMatrixData(long id) {
+    public byte[] getMatrixData(long id) throws NoSuchElementException {
         Optional<ASCIIMatrix> dbImage = ASCIIMatrixRepository.findById(id);
         if (dbImage.isPresent() && dbImage.get().getMatrixData() != null) {
             return dbImage.get().getMatrixData();
         }
         else {
-            return null;
+            throw new NoSuchElementException("No ASCII Matrix found with id: " + id);
         }
     }
 
