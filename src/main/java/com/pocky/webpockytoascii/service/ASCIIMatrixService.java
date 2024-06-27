@@ -57,7 +57,7 @@ public class ASCIIMatrixService {
             throw new IllegalArgumentException("Image not found: " + imageId);
         }
 
-        PixelMatrix pxmatrix = new PixelMatrix(image, 350, -1);
+        PixelMatrix pxmatrix = new PixelMatrix(image, 94, -1);
         return ASCIIMatrixRepository.save(ASCIIMatrix.builder()
                 .imageId(imageId)
                 .type(type)
